@@ -45,6 +45,9 @@ dependencies:
   google_mlkit_barcode_scanning:
   permission_handler:
   camera:
+  share_plus:
+  image:
+  path_provider:
 
 dev_dependencies:
   flutter_test:

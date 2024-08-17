@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:share_plus/share_plus.dart'; // Import the share package
 import 'dart:io';
 
 class TextRecognitionPage extends StatefulWidget {
@@ -14,7 +15,6 @@ class _TextRecognitionPageState extends State<TextRecognitionPage> {
   File? _image;
   String _recognizedText = '';
 
-  // Function to pick an image from the camera or gallery
   Future<void> _pickImage(ImageSource source) async {
     final ImagePicker picker = ImagePicker();
     final XFile? pickedFile = await picker.pickImage(source: source);
@@ -22,13 +22,12 @@ class _TextRecognitionPageState extends State<TextRecognitionPage> {
     if (pickedFile != null) {
       setState(() {
         _image = File(pickedFile.path);
-        _recognizedText = ''; // Reset text when a new image is picked
+        _recognizedText = '';
       });
       _recognizeText();
     }
   }
 
-  // Function to recognize text using Google ML Kit Text Recognition
   Future<void> _recognizeText() async {
     if (_image == null) return;
 
@@ -47,11 +46,9 @@ class _TextRecognitionPageState extends State<TextRecognitionPage> {
       _recognizedText = resultText.isNotEmpty ? resultText : 'No text recognized.';
     });
 
-    // Close the text recognizer when done
     textRecognizer.close();
   }
 
-  // Function to reset the image and recognized text
   void _reset() {
     setState(() {
       _image = null;
@@ -59,39 +56,59 @@ class _TextRecognitionPageState extends State<TextRecognitionPage> {
     });
   }
 
+  // Function to share recognized text
+  void _shareText() {
+    if (_recognizedText.isNotEmpty) {
+      Share.share(_recognizedText);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('No text to share')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Text Recognition'),
+        backgroundColor: Colors.teal,
+        actions: [
+          if (_recognizedText.isNotEmpty)
+            IconButton(
+              icon: const Icon(Icons.share),
+              onPressed: _shareText,
+            ),
+        ],
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: Center(
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: <Widget>[
-                _image == null
-                    ? const Text('No image selected.')
-                    : Image.file(_image!),
-                const SizedBox(height: 20),
-                _recognizedText.isNotEmpty
-                    ? Container(
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: <Widget>[
+              _image == null
+                  ? Container(
+                height: 200,
+                decoration: BoxDecoration(
+                  color: Colors.grey[200],
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Center(child: const Text('No image selected.')),
+              )
+                  : Card(
+                elevation: 5,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                child: Image.file(_image!),
+              ),
+              const SizedBox(height: 20),
+              _recognizedText.isNotEmpty
+                  ? Card(
+                elevation: 3,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                color: Colors.grey[200],
+                child: Padding(
                   padding: const EdgeInsets.all(12.0),
-                  decoration: BoxDecoration(
-                    color: Colors.grey[200],
-                    border: Border.all(color: Colors.grey, width: 2.0),
-                    borderRadius: BorderRadius.circular(10),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.grey.withOpacity(0.5),
-                        spreadRadius: 2,
-                        blurRadius: 7,
-                        offset: const Offset(0, 3),
-                      ),
-                    ],
-                  ),
                   child: SelectableText(
                     _recognizedText,
                     style: const TextStyle(fontSize: 16),
@@ -104,31 +121,51 @@ class _TextRecognitionPageState extends State<TextRecognitionPage> {
                     cursorColor: Colors.blue,
                     cursorWidth: 2.0,
                   ),
-                )
-                    : const SizedBox(),
-                const SizedBox(height: 20),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    ElevatedButton(
-                      onPressed: () => _pickImage(ImageSource.camera),
-                      child: const Text('Pick from Camera'),
-                    ),
-                    ElevatedButton(
-                      onPressed: () => _pickImage(ImageSource.gallery),
-                      child: const Text('Pick from Gallery'),
-                    ),
-                  ],
                 ),
-                const SizedBox(height: 20),
-                _image != null
-                    ? ElevatedButton(
-                  onPressed: _reset,
-                  child: const Text('Reset'),
-                )
-                    : const SizedBox(),
-              ],
-            ),
+              )
+                  : const SizedBox(),
+              const SizedBox(height: 20),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  ElevatedButton.icon(
+                    onPressed: () => _pickImage(ImageSource.camera),
+                    icon: const Icon(Icons.camera_alt),
+                    label: const Text('Camera'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.teal,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                  ),
+                  ElevatedButton.icon(
+                    onPressed: () => _pickImage(ImageSource.gallery),
+                    icon: const Icon(Icons.photo_library),
+                    label: const Text('Gallery'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.orange,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              _image != null
+                  ? ElevatedButton(
+                onPressed: _reset,
+                child: const Text('Reset'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.redAccent,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+              )
+                  : const SizedBox(),
+            ],
           ),
         ),
       ),
